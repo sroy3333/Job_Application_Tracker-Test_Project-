@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applications - Job Application Tracker</title>
+    <link rel="stylesheet" href="/css/applications.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>Job Application Tracker</h1>
+        <nav class="main-header__nav">
+            <ul class="main-header__item-list">
+                <li class="main-header__item"><a href="Dashboard.html">Dashboard</a></li>
+                <li class="main-header__item"><a class="active" href="Applications.html">Applications</a></li>
+                <li class="main-header__item"><a href="Companies.html">Companies</a></li>
+                <li class="main-header__item"><a href="Profile.html">Profile</a></li>
+                <li class="main-header__item"><a href="Logout.html">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2>Applications</h2>
+            <div class="application-entry">
+                <h3>Log a New Application</h3>
+                <form id="applicationForm">
+                    <label for="companyName">Company Name:</label>
+                    <input type="text" id="companyName" name="companyName" required>
+                    
+                    <label for="jobTitle">Job Title:</label>
+                    <input type="text" id="jobTitle" name="jobTitle" required>
+                    
+                    <label for="applicationDate">Application Date:</label>
+                    <input type="date" id="applicationDate" name="applicationDate" required>
+                    
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="applied">Applied</option>
+                        <option value="interviewed">Interviewed</option>
+                        <option value="offered">Offered</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes"></textarea>
+                    
+                    <label for="attachment">Upload Attachment:</label>
+                    <input type="file" id="attachment" name="attachment">
+                    
+                    <button type="submit">Add Application</button>
+                </form>
+            </div>
+
+            <div class="application-search">
+                <h3>Search Applications</h3>
+                <input type="text" id="searchKeyword" placeholder="Search by keyword, company name, or job title">
+                <ul id="searchResults"></ul>
+            </div>
+
+            <div class="application-filter">
+                <h3>Filter Applications</h3>
+                <label for="statusFilter">Status:</label>
+                <select id="statusFilter">
+                    <option value="">All</option>
+                    <option value="applied">Applied</option>
+                    <option value="interviewed">Interviewed</option>
+                    <option value="offered">Offered</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+
+                <label for="dateRangeStart">Date Range Start:</label>
+                <input type="date" id="dateRangeStart">
+
+                <label for="dateRangeEnd">Date Range End:</label>
+                <input type="date" id="dateRangeEnd">
+
+                <button id="applyFilter">Apply Filter</button>
+            </div>
+
+            <div class="application-reminder">
+              <h3>Set Follow-up Reminder</h3>
+              <form id="reminderForm">
+                <label for="companyName">Company Name:</label>
+                <input type="text" id="companyName" name="companyName" required>
+                
+                <label for="reminderDate">Reminder Date:</label>
+                <input type="date" id="reminderDate" name="reminderDate" required>
+
+                <button type="submit">Set Reminder</button>
+              </form>
+            </div>
+
+            <div class="reminder-list">
+              <h3>Follow-Up Reminders</h3>
+              <ul id="reminders">
+                <!-- Reminders will be dynamically inserted here -->
+              </ul>
+            </div>
+
+            <div class="application-list">
+                <h3>Application List</h3>
+                <ul id="applications">
+                    <!-- Applications will be dynamically inserted here -->
+                </ul>
+            </div>
+
+            <div class="application-visualization">
+                <h3>Application Progress Visualization</h3>
+                <canvas id="applicationChart"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Job Application Tracker. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js" integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      
+      let appChart; // Declare the chart variable here
+      // Fetch all applications from the backend
+      const fetchApplications = () => {
+        const token = localStorage.getItem('token');
+        axios.get('http://localhost:7000/applications', {
+          headers: {
+            Authorization: token
+          }
+        })
+        .then(response => {
+          renderApplications(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching applications:', error);
+        });
+      };
+
+      // Initialize the page by fetching existing applications
+      fetchApplications();
+
+      // Function to render applications list
+      const applicationsList = document.getElementById("applications");
+      const renderApplications = (apps) => {
+        applicationsList.innerHTML = "";
+        apps.forEach(app => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <strong>Company Name: ${app.companyName}</strong>
+            <p><Strong>Job Title: ${app.jobTitle}</strong></p>
+              <p>Application Date: ${app.applicationDate}</p>
+              <p>Status: ${app.status}</p>
+              <p>Notes: ${app.notes}</p>
+              <p>Attachments: ${app.Attachments && app.Attachments.length > 0 ? `<a href="${app.Attachments[0].fileUrl}" target="_blank">View Attachment</a>` : ''}</p>
+              <button onclick="editApplication(${app.id})">Edit</button>
+              <button onclick="deleteApplication(${app.id})">Delete</button>
+          `;  
+          applicationsList.appendChild(li);
+        });
+        updateChart(apps);
+      };
+
+      // Function to update chart
+      const updateChart = (applications) => {
+        const statusCounts = {
+          applied: 0,
+          interviewed: 0,
+          offered: 0,
+          rejected: 0
+        };
+
+        applications.forEach(app => {
+          if (app.status in statusCounts) {
+            statusCounts[app.status]++;
+          }
+        });
+
+        const chartData = [
+          statusCounts.applied,
+          statusCounts.interviewed,
+          statusCounts.offered,
+          statusCounts.rejected
+        ];
+
+        if (appChart) {
+          appChart.data.datasets[0].data = chartData;
+          appChart.update();
+        } else {
+          const ctx = document.getElementById('applicationChart').getContext('2d');
+          appChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: ['Applied', 'Interviewed', 'Offered', 'Rejected'],
+              datasets: [{
+                label: '# of Applications',
+                data: chartData,
+                backgroundColor: [
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }  
+          });
+        }
+      };
+
+      // Function to handle form submission
+      const defaultFormSubmitHandler = (event) => {
+        const token = localStorage.getItem('token');
+        event.preventDefault();
+        const formData = new FormData(applicationForm);
+        axios.post('http://localhost:7000/applications', formData, {
+          headers: {
+            Authorization: token,
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        .then(response => {
+          fetchApplications();
+          applicationForm.reset();
+        })
+        .catch(error => {
+          console.error('Error adding application:', error);
+        });
+      };
+
+      applicationForm.onsubmit = defaultFormSubmitHandler;
+
+      function editApplication(applicationId) {
+        const token = localStorage.getItem('token');
+        // Fetch the application details and populate the form for editing
+        axios.get(`http://localhost:7000/applications/${applicationId}`, {
+          headers: {
+            Authorization: token
+          }
+        })
+        .then(response => {
+          const app = response.data;
+          // Populate form fields with application data
+          document.getElementById('companyName').value = app.companyName;
+          document.getElementById('jobTitle').value = app.jobTitle;
+          document.getElementById('applicationDate').value = app.applicationDate;
+          document.getElementById('status').value = app.status;
+          document.getElementById('notes').value = app.notes;
+    
+          // Change form action to update application
+          applicationForm.onsubmit = (event) => {
+            event.preventDefault();
+            updateApplication(applicationId);
+          };
+        })
+        .catch(error => {
+          console.error('Error fetching application:', error);
+        });
+      }
+
+      function updateApplication(applicationId) {
+        const formData = new FormData(applicationForm);
+        const token = localStorage.getItem('token');
+        axios.put(`http://localhost:7000/applications/${applicationId}`, formData, {
+          headers: {
+            Authorization: token,
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        .then(response => {
+          fetchApplications();
+          applicationForm.reset();
+          applicationForm.onsubmit = defaultFormSubmitHandler;
+        })
+        .catch(error => {
+          console.error('Error updating application:', error);
+        });
+      }
+
+      function deleteApplication(applicationId) {
+        const token = localStorage.getItem('token');
+        axios.delete(`http://localhost:7000/applications/${applicationId}`, {
+          headers: {
+            Authorization: token
+          }
+        })
+        .then(response => {
+          fetchApplications();
+        })
+        .catch(error => {
+          console.error('Error deleting application:', error);
+        });
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        const applicationForm = document.getElementById("applicationForm");
+        const searchKeyword = document.getElementById("searchKeyword");
+        const searchResults = document.getElementById("searchResults");
+        const statusFilter = document.getElementById("statusFilter");
+        const dateRangeStart = document.getElementById("dateRangeStart");
+        const dateRangeEnd = document.getElementById("dateRangeEnd");
+        const applyFilterButton = document.getElementById("applyFilter");
+        const reminderForm = document.getElementById("reminderForm");
+        const remindersList = document.getElementById("reminders");
+        const token = localStorage.getItem('token');
+
+        // Function to render search results
+        const renderSearchResults = (apps) => {
+          searchResults.innerHTML = "";
+          apps.forEach(app => {
+            const li = document.createElement("li");
+            li.textContent = `${app.companyName} - ${app.jobTitle} (${app.status})`;
+            searchResults.appendChild(li);
+          });
+        };
+
+        // Function to handle search
+        searchKeyword.addEventListener("input", () => {
+          const keyword = searchKeyword.value.toLowerCase();
+          axios.get(`http://localhost:7000/applications/search?keyword=${keyword}`, {
+            headers: {
+              Authorization: token
+            }
+          })
+          .then(response => {
+            renderSearchResults(response.data);
+          })
+          .catch(error => {
+            console.error('Error searching applications:', error);
+          });
+        });
+
+        // Function to handle filtering
+        applyFilterButton.addEventListener("click", () => {
+          const status = statusFilter.value;
+          const startDate = dateRangeStart.value;
+          const endDate = dateRangeEnd.value;
+
+          axios.get('http://localhost:7000/applications/filter', {
+            params: {
+              status,
+              startDate,
+              endDate
+            },
+            headers: {
+              Authorization: token
+            }
+          })
+          .then(response => {
+            renderApplications(response.data);
+          })
+          .catch(error => {
+            console.error('Error filtering applications:', error);
+          });
+        });
+
+        reminderForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          const formData = new FormData(reminderForm);
+          const data = {
+            companyName: formData.get('companyName'),
+            reminderDate: formData.get('reminderDate')
+          };
+          axios.post('http://localhost:7000/applications/reminders', data, {
+            headers: {
+              Authorization: token
+            }
+          })
+          .then(response => {
+            alert('Reminder set successfully!');
+            reminderForm.reset();
+          })
+          .catch(error => {
+            console.error('Error setting reminder:', error);
+          });
+        });
+
+        const fetchReminders = () => {
+          axios.get('http://localhost:7000/applications/reminders', {
+            headers: {
+              Authorization: token
+            }
+          })
+          .then(response => {
+            const reminders = response.data;
+            remindersList.innerHTML = "";
+            reminders.forEach(reminder => {
+              const li = document.createElement("li");
+              li.textContent = `Company Name: ${reminder.Application.companyName} - Reminder Date: ${new Date(reminder.reminderDate).toLocaleDateString()}`;
+              remindersList.appendChild(li);
+            });
+          })
+          .catch(error => {
+            console.error('Error fetching reminders:', error);
+          });
+        };
+        fetchReminders();
+      });  
+  </script>
+</body>
+</html>

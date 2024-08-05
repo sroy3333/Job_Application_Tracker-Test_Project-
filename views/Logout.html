@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout - Job Application Tracker</title>
+    <link rel="stylesheet" href="/css/logout.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>Job Application Tracker</h1>
+        <nav class="main-header__nav">
+            <ul class="main-header__item-list">
+                <li class="main-header__item"><a href="Dashboard.html">Dashboard</a></li>
+                <li class="main-header__item"><a href="Applications.html">Applications</a></li>
+                <li class="main-header__item"><a href="Companies.html">Companies</a></li>
+                <li class="main-header__item"><a href="Profile.html">Profile</a></li>
+                <li class="main-header__item"><a class="active" href="Logout.html">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2>Logout</h2>
+            <p>Processing your logout...</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Job Application Tracker. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const logoutSection = document.querySelector('main section');
+
+            const logoutUser = async () => {
+                try {
+                    const token = localStorage.getItem('token');
+
+                    if (!token) {
+                        throw new Error('No token found');
+                    }
+
+                    // Send a request to the server to log out using Axios
+                    const response = await axios.post('http://localhost:7000/user/logout', {}, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: token
+                        },
+                        withCredentials: true // Include cookies in the request
+                    });
+
+                    if (response.status !== 200) {
+                        throw new Error('Failed to log out');
+                    }
+
+                    // Clear local storage or any other client-side data
+                    localStorage.removeItem('token');
+                    sessionStorage.clear();
+
+                    // Display logout confirmation message
+                    logoutSection.innerHTML = `
+                        <h2>Logout</h2>
+                        <p>You have been successfully logged out.</p>
+                        <a href="login.html">Click here to log in again</a>
+                    `;
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                    logoutSection.innerHTML = `
+                        <h2>Logout</h2>
+                        <p>There was an error logging you out. Please try again.</p>
+                    `;
+                }
+            };
+
+            // Call the logout function on page load
+            logoutUser();
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js" integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>

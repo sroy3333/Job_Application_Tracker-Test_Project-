@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Companies - Job Application Tracker</title>
+    <link rel="stylesheet" href="/css/companies.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>Job Application Tracker</h1>
+        <nav class="main-header__nav">
+            <ul class="main-header__item-list">
+                <li class="main-header__item"><a href="Dashboard.html">Dashboard</a></li>
+                <li class="main-header__item"><a href="Applications.html">Applications</a></li>
+                <li class="main-header__item"><a class="active" href="Companies.html">Companies</a></li>
+                <li class="main-header__item"><a href="Profile.html">Profile</a></li>
+                <li class="main-header__item"><a href="Logout.html">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2>Companies</h2>
+            <div class="company-entry">
+                <h3 id="form-title">Add a New Company</h3>
+                <form id="companyForm">
+                    <label for="name">Company Name:</label>
+                    <input type="text" id="name" name="name" required>
+
+                    <label for="contact">Contact Details:</label>
+                    <input type="text" id="contact" name="contact" required>
+
+                    <label for="size">Company Size:</label>
+                    <input type="text" id="size" name="size" required>
+
+                    <label for="industry">Industry:</label>
+                    <input type="text" id="industry" name="industry" required>
+
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes"></textarea>
+
+                    <label for="jobListings">Job Listings (comma separated):</label>
+                    <textarea id="jobListings" name="jobListings"></textarea>
+
+                    <button type="submit" id="form-button">Add Company</button>
+                </form>
+            </div>
+
+            <div class="company-list">
+                <h3>Company List</h3>
+                <ul id="companyList">
+                    <!-- Companies will be dynamically inserted here -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Job Application Tracker. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const companyForm = document.getElementById("companyForm");
+            const companyList = document.getElementById("companyList");
+            const formTitle = document.getElementById("form-title");
+            const formButton = document.getElementById("form-button");
+            const token = localStorage.getItem('token');
+
+            let companies = [];
+            let editMode = false;
+            let editCompanyId = null;
+
+            const renderCompanies = (companies) => {
+                companyList.innerHTML = "";
+                companies.forEach(company => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                        <strong>Company Name: ${company.name}</strong>
+                        <p>Contact: ${company.contact}</p>
+                        <p>Size: ${company.size}</p>
+                        <p>Industry: ${company.industry}</p>
+                        <p>Notes: ${company.notes}</p>
+                        <h4>Job Listings</h4>
+                        <ul>
+                            ${company.JobListings.map(job => `<li>${job.title}</li>`).join('')}
+                        </ul>
+                        <button onclick="deleteCompany(${company.id})">Delete</button>
+                        <button onclick="startEditCompany(${company.id})">Edit</button>
+                    `;
+                    companyList.appendChild(li);
+                });
+            };
+
+            const fetchCompanies = async () => {
+                try {
+                    const response = await axios.get('http://localhost:7000/companies', {
+                        headers: {
+                            Authorization: token
+                        }
+                    });
+                    companies = response.data;
+                    renderCompanies(companies);
+                } catch (error) {
+                    console.error('Error fetching companies:', error);
+                }
+            };
+
+            const addCompany = async (companyData) => {
+                try {
+                    await axios.post('http://localhost:7000/companies', companyData, {
+                        headers: {
+                            Authorization: token
+                        }
+                    });
+                    fetchCompanies();
+                } catch (error) {
+                    console.error('Error adding company:', error);
+                }
+            };
+
+            const updateCompany = async (companyId, companyData) => {
+                try {
+                    await axios.put(`http://localhost:7000/companies/${companyId}`, companyData, {
+                        headers: {
+                            Authorization: token
+                        }
+                    });
+                    fetchCompanies();
+                } catch (error) {
+                    console.error('Error updating company:', error);
+                }
+            };
+
+            const deleteCompany = async (companyId) => {
+                try {
+                    await axios.delete(`http://localhost:7000/companies/${companyId}`, {
+                        headers: {
+                            Authorization: token
+                        }
+                    });
+                    fetchCompanies();
+                } catch (error) {
+                    console.error('Error deleting company:', error);
+                }
+            };
+
+            const startEditCompany = (companyId) => {
+                editMode = true;
+                editCompanyId = companyId;
+                const company = companies.find(company => company.id === companyId);
+
+                formTitle.textContent = 'Edit Company';
+                formButton.textContent = 'Update Company';
+
+                document.getElementById("name").value = company.name;
+                document.getElementById("contact").value = company.contact;
+                document.getElementById("size").value = company.size;
+                document.getElementById("industry").value = company.industry;
+                document.getElementById("notes").value = company.notes;
+                document.getElementById("jobListings").value = company.JobListings.map(job => job.title).join(', ');
+            };
+
+            const resetForm = () => {
+                editMode = false;
+                editCompanyId = null;
+                formTitle.textContent = 'Add a New Company';
+                formButton.textContent = 'Add Company';
+                companyForm.reset();
+            };
+
+            companyForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const formData = new FormData(companyForm);
+                const companyData = {
+                    name: formData.get("name"),
+                    contact: formData.get("contact"),
+                    size: formData.get("size"),
+                    industry: formData.get("industry"),
+                    notes: formData.get("notes"),
+                    jobListings: formData.get("jobListings").split(',').map(job => job.trim())
+                };
+
+                if (editMode) {
+                    updateCompany(editCompanyId, companyData);
+                } else {
+                    addCompany(companyData);
+                }
+
+                resetForm();
+            });
+
+            window.deleteCompany = deleteCompany;
+            window.startEditCompany = startEditCompany;
+
+            fetchCompanies();
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js" integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+/* Basic Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+header {
+  background-color: #333;
+  color: #fff;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+nav ul li {
+  margin-left: 15px;
+}
+
+nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+nav ul li a:hover {
+  background-color: #555;
+}
+
+nav ul li a.active {
+  background-color: #777;
+}
+
+main {
+  padding: 20px;
+  min-height: calc(100vh - 120px);
+}
+
+footer {
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 10px 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+section h2 {
+  font-size: 1.8em;
+  margin-bottom: 10px;
+}
+
+/* Error Page Styles */
+.error-page {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.error-page h2 {
+  font-size: 2em;
+  color: #e74c3c;
+}
+
+.error-page p {
+  font-size: 1.2em;
+}
+
+.error-page a {
+  color: #3498db;
+  text-decoration: none;
+  border-bottom: 1px dashed #3498db;
+}
+
+.error-page a:hover {
+  border-bottom: 1px solid #3498db;
+}
+
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.summary-cards {
+  display: flex;
+  justify-content: space-between;
+}
+
+.summary-card {
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  flex: 1;
+  margin: 0 10px;
+}
+
+.summary-card h3 {
+  margin: 0 0 10px;
+}
+
+.summary-card p {
+  font-size: 1.5em;
+  margin: 0;
+}
+
+.applications-progress, .upcoming-interviews, .recent-activities {
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.applications-progress h3, .upcoming-interviews h3, .recent-activities h3 {
+  margin-top: 0;
+}
+
+.applications-progress ul, .upcoming-interviews ul, .recent-activities ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.applications-progress li, .upcoming-interviews li, .recent-activities li {
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.applications-progress li:last-child, .upcoming-interviews li:last-child, .recent-activities li:last-child {
+  border-bottom: none;
+}
